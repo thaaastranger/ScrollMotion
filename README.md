@@ -31,11 +31,7 @@ open index.html
 
 No build step required—just open `index.html` in your browser.
 
-### 2. Deploy to Vercel
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/thaaastranger/ScrollMotion)
-
----
 
 ## Pricing Tiers
 
