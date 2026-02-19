@@ -6,6 +6,45 @@
   let jpegQuality = 0.8, exportFormat = 'jpeg';
   let exportResolution = 'original', exportAspect = 'original';
 
+  // ── User Tier & Limits ──
+  let userTier = 'free'; // 'free', 'pro', 'business'
+  let exportsUsed = 0;
+
+  const TIER_LIMITS = {
+    free: {
+      maxFrames: 50,
+      maxFileSize: 50 * 1024 * 1024, // 50MB
+      formats: ['jpeg'],
+      resolutions: ['720p', 'original'],
+      exportsPerMonth: 3,
+      watermark: true
+    },
+    pro: {
+      maxFrames: 300,
+      maxFileSize: 500 * 1024 * 1024, // 500MB
+      formats: ['jpeg', 'webp'],
+      resolutions: ['720p', '1080p', '2k', '4k', 'original'],
+      exportsPerMonth: -1, // unlimited
+      watermark: false
+    },
+    business: {
+      maxFrames: -1, // unlimited (capped at 500 for UI)
+      maxFileSize: 5 * 1024 * 1024 * 1024, // 5GB
+      formats: ['jpeg', 'webp'],
+      resolutions: ['720p', '1080p', '2k', '4k', 'original'],
+      exportsPerMonth: -1,
+      watermark: false
+    }
+  };
+
+  // Load tier from localStorage (demo - will be replaced with auth)
+  const savedTier = localStorage.getItem('scrollmotion_tier');
+  const savedExports = parseInt(localStorage.getItem('scrollmotion_exports') || '0');
+  if (savedTier && TIER_LIMITS[savedTier]) {
+    userTier = savedTier;
+    exportsUsed = savedExports;
+  }
+
   // Refs
   const $ = id => document.getElementById(id);
   const U = $('U'), W = $('W'), drop = $('drop'), fi = $('fi');
@@ -25,6 +64,122 @@
   const fiImg = $('fiImg'), fiZip = $('fiZip');
   const rQual = $('rQual'), vQual = $('vQual'), selFormat = $('selFormat');
   const selResolution = $('selResolution'), selAspect = $('selAspect');
+
+  // Upgrade modal refs
+  const upgradeModal = $('upgradeModal');
+  const modalClose = $('modalClose');
+  const modalDesc = $('modalDesc');
+  const btnUpgrade = $('btnUpgrade');
+  const btnDemoTier = $('btnDemoTier');
+  const tierBadge = $('tierBadge');
+
+  // ── Tier Management ──
+  function applyTierLimits() {
+    const limits = TIER_LIMITS[userTier];
+
+    // Frame limit
+    if (limits.maxFrames > 0) {
+      rFr.max = limits.maxFrames;
+      if (fc > limits.maxFrames) {
+        fc = limits.maxFrames;
+        rFr.value = fc;
+        vFr.textContent = fc;
+      }
+    } else {
+      rFr.max = 500; // UI cap for business
+    }
+
+    // Format options
+    Array.from(selFormat.options).forEach(opt => {
+      opt.disabled = !limits.formats.includes(opt.value);
+      if (opt.disabled && opt.selected) {
+        selFormat.value = limits.formats[0];
+        exportFormat = limits.formats[0];
+      }
+    });
+
+    // Resolution options
+    Array.from(selResolution.options).forEach(opt => {
+      opt.disabled = !limits.resolutions.includes(opt.value);
+      if (opt.disabled && opt.selected) {
+        selResolution.value = 'original';
+        exportResolution = 'original';
+      }
+    });
+
+    // Update frame limit hint
+    if (userTier === 'free') {
+      const hint = document.querySelector('#rFr + .sg-hint');
+      if (hint) hint.innerHTML = `More frames = smoother but heavier. Free tier limited to ${limits.maxFrames} frames. <a href="#" onclick="showUpgradeModal('frames'); return false;" style="color: rgba(255,255,255,.6); text-decoration: underline;">Upgrade</a>`;
+    }
+  }
+
+  function showUpgradeModal(reason = 'limit') {
+    const messages = {
+      limit: "You've used all 3 free exports this month.",
+      frames: "Unlock up to 300 frames with Pro.",
+      format: "WebP format is only available on Pro and Business plans.",
+      resolution: "Higher resolutions require a Pro or Business plan.",
+      filesize: "This file exceeds the free tier limit (50MB)."
+    };
+    modalDesc.textContent = messages[reason] || messages.limit;
+    upgradeModal.classList.add('on');
+  }
+
+  function hideUpgradeModal() {
+    upgradeModal.classList.remove('on');
+  }
+
+  function checkExportLimit() {
+    const limits = TIER_LIMITS[userTier];
+    if (limits.exportsPerMonth === -1) return true;
+
+    if (exportsUsed >= limits.exportsPerMonth) {
+      showUpgradeModal('limit');
+      return false;
+    }
+    return true;
+  }
+
+  function incrementExportCount() {
+    exportsUsed++;
+    localStorage.setItem('scrollmotion_exports', exportsUsed.toString());
+  }
+
+  function switchTier(newTier) {
+    userTier = newTier;
+    localStorage.setItem('scrollmotion_tier', userTier);
+    applyTierLimits();
+    hideUpgradeModal();
+    updateTierBadge();
+
+    // Show notification
+    const tierName = { free: 'Free', pro: 'Pro', business: 'Business' }[userTier];
+    alert(`Switched to ${tierName} tier! (Demo mode - payment not integrated yet)`);
+  }
+
+  function updateTierBadge() {
+    const tierNames = { free: 'Free', pro: 'Pro', business: 'Business' };
+    tierBadge.textContent = tierNames[userTier];
+    tierBadge.className = 'top-tier ' + userTier;
+  }
+
+  // Modal handlers
+  modalClose.onclick = hideUpgradeModal;
+  upgradeModal.querySelector('.modal-bg').onclick = hideUpgradeModal;
+  btnUpgrade.onclick = () => {
+    // In production, redirect to Stripe checkout
+    alert('Stripe checkout would open here. For now, use "Try Pro (Demo)" button.');
+  };
+  btnDemoTier.onclick = () => {
+    if (userTier === 'free') switchTier('pro');
+    else if (userTier === 'pro') switchTier('business');
+    else switchTier('free');
+  };
+
+  // Apply initial limits and update UI
+  applyTierLimits();
+  updateTierBadge();
 
   // ── Mode Toggle ──
   uplTabs.forEach(tab => {
@@ -421,6 +576,10 @@
   // ── Export ──
   async function doExport(mode_export) {
     if (!ready) return;
+
+    // Check export limit
+    if (!checkExportLimit()) return;
+
     ovExport.classList.add('on');
     ovExBar.style.width = '0%'; ovExPct.textContent = '0%';
 
@@ -496,6 +655,9 @@
       bCp.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
       setTimeout(() => { bCp.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> Copy Code'; }, 2200);
     }
+
+    // Increment export count for free tier
+    incrementExportCount();
 
     ovExport.classList.remove('on');
     // Restore scroll position

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pricing — ScrollMotion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a0a0b;
+  --bg-alt: #111;
+  --surface: rgba(255,255,255,0.02);
+  --surface-hover: rgba(255,255,255,0.04);
+  --border: rgba(255,255,255,0.06);
+  --text: #f0f0f0;
+  --text-dim: rgba(255,255,255,0.60);
+  --text-dimmer: rgba(255,255,255,0.30);
+}
+html, body { min-height: 100%; background: var(--bg); color: var(--text); }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+
+/* Header */
+.header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: 60px; backdrop-filter: blur(12px); background: rgba(10,10,11,0.8);
+  border-bottom: 1px solid var(--border);
+}
+.header-inner {
+  max-width: 1200px; margin: 0 auto; height: 100%;
+  padding: 0 24px; display: flex; align-items: center; justify-content: space-between;
+}
+.logo-link {
+  display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text);
+}
+.logo-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(145deg, #1a1a1c 0%, #111 100%);
+  border: 1px solid var(--border); display: grid; place-items: center;
+}
+.logo-icon svg { width: 14px; height: 14px; opacity: 0.5; }
+.logo-text { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+.nav { display: flex; gap: 32px; align-items: center; }
+.nav a { font-size: 14px; color: var(--text-dim); text-decoration: none; transition: color 0.2s; }
+.nav a:hover { color: var(--text); }
+.btn-primary {
+  padding: 8px 18px; font-size: 14px; font-weight: 500;
+  background: #fff; color: #0a0a0b; border: none; border-radius: 6px;
+  cursor: pointer; text-decoration: none; transition: opacity 0.2s;
+  font-family: inherit;
+}
+.btn-primary:hover { opacity: 0.9; }
+
+/* Hero */
+.hero {
+  padding: 140px 24px 60px; text-align: center;
+}
+.hero h1 {
+  font-size: clamp(36px, 5vw, 52px); font-weight: 700; letter-spacing: -1px;
+  margin-bottom: 16px;
+}
+.hero p { font-size: 18px; color: var(--text-dim); max-width: 600px; margin: 0 auto 32px; }
+.toggle {
+  display: inline-flex; gap: 4px; padding: 4px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px; margin-bottom: 60px;
+}
+.toggle button {
+  padding: 8px 24px; font-size: 13px; font-weight: 500;
+  background: transparent; border: none; border-radius: 6px;
+  color: var(--text-dim); cursor: pointer; transition: all 0.2s;
+  font-family: inherit;
+}
+.toggle button.active { background: #fff; color: #0a0a0b; }
+
+/* Pricing */
+.pricing { max-width: 1100px; margin: 0 auto; padding: 0 24px 100px; }
+.pricing-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px; max-width: 1000px; margin: 0 auto;
+}
+.price-card {
+  padding: 36px 30px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; position: relative; transition: all 0.3s;
+}
+.price-card.featured {
+  background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.12);
+  transform: scale(1.03);
+}
+.price-card.featured::before {
+  content: 'MOST POPULAR'; position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+  padding: 5px 16px; font-size: 10px; font-weight: 600; letter-spacing: 1.3px;
+  background: #fff; color: #0a0a0b; border-radius: 20px;
+}
+.price-card h3 { font-size: 22px; font-weight: 600; margin-bottom: 10px; }
+.price-card .price {
+  font-size: 48px; font-weight: 700; margin-bottom: 8px; line-height: 1;
+}
+.price-card .price small { font-size: 18px; color: var(--text-dim); font-weight: 400; }
+.price-card .desc { font-size: 14px; color: var(--text-dim); margin-bottom: 28px; min-height: 40px; }
+.price-card ul { list-style: none; margin-bottom: 32px; }
+.price-card li {
+  padding: 10px 0; font-size: 14px; color: var(--text-dim);
+  display: flex; align-items: start; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.price-card li:last-child { border-bottom: none; }
+.price-card li::before {
+  content: '✓'; color: rgba(255,255,255,0.4); font-weight: 600; flex-shrink: 0; margin-top: 1px;
+}
+.price-card .btn {
+  width: 100%; padding: 14px; font-size: 15px; font-weight: 500;
+  border-radius: 8px; cursor: pointer; transition: all 0.2s;
+  text-decoration: none; font-family: inherit; display: block; text-align: center;
+}
+.btn.primary { background: #fff; color: #0a0a0b; border: none; }
+.btn.primary:hover { opacity: 0.9; }
+.btn.secondary {
+  background: transparent; color: var(--text-dim); border: 1px solid var(--border);
+}
+.btn.secondary:hover { background: var(--surface-hover); color: var(--text); }
+
+/* FAQ */
+.faq { max-width: 800px; margin: 0 auto; padding: 60px 24px 100px; }
+.faq h2 { font-size: 32px; font-weight: 700; text-align: center; margin-bottom: 48px; }
+.faq-item {
+  padding: 24px 0; border-bottom: 1px solid var(--border);
+}
+.faq-item h3 { font-size: 18px; font-weight: 600; margin-bottom: 12px; }
+.faq-item p { font-size: 15px; color: var(--text-dim); line-height: 1.6; }
+
+/* Footer */
+.footer {
+  padding: 60px 24px 40px; border-top: 1px solid var(--border);
+}
+.footer-inner { max-width: 1100px; margin: 0 auto; text-align: center; }
+.footer p { font-size: 13px; color: var(--text-dimmer); }
+
+@media (max-width: 768px) {
+  .nav { display: none; }
+  .pricing-grid { grid-template-columns: 1fr; }
+  .price-card.featured { transform: scale(1); }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-inner">
+    <a href="landing.html" class="logo-link">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 19,12 8,19"/></svg>
+      </div>
+      <span class="logo-text">ScrollMotion</span>
+    </a>
+    <nav class="nav">
+      <a href="landing.html#features">Features</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="landing.html#examples">Examples</a>
+      <a href="index.html" class="btn-primary">Launch App →</a>
+    </nav>
+  </div>
+</header>
+
+<!-- Hero -->
+<section class="hero">
+  <h1>Simple, transparent pricing</h1>
+  <p>Start free. Upgrade when you need more power. Cancel anytime.</p>
+  <div class="toggle">
+    <button class="active">Monthly</button>
+    <button>Annual <small style="color: rgba(255,255,255,0.4); margin-left: 4px;">(Save 20%)</small></button>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section class="pricing">
+  <div class="pricing-grid">
+
+    <!-- Free -->
+    <div class="price-card">
+      <h3>Free</h3>
+      <div class="price">$0<small>/mo</small></div>
+      <div class="desc">Perfect for trying it out</div>
+      <ul>
+        <li>3 exports per month</li>
+        <li>Up to 50 frames</li>
+        <li>720p max resolution</li>
+        <li>JPEG format only</li>
+        <li>50MB file size limit</li>
+        <li>Watermark on exports</li>
+      </ul>
+      <a href="index.html" class="btn secondary">Get Started Free</a>
+    </div>
+
+    <!-- Pro -->
+    <div class="price-card featured">
+      <h3>Pro</h3>
+      <div class="price">$15<small>/mo</small></div>
+      <div class="desc">For creators and designers</div>
+      <ul>
+        <li>Unlimited exports</li>
+        <li>Up to 300 frames</li>
+        <li>4K resolution support</li>
+        <li>JPEG + WebP formats</li>
+        <li>500MB file size limit</li>
+        <li>No watermark</li>
+        <li>Priority email support</li>
+      </ul>
+      <a href="index.html" class="btn primary">Start Pro Trial</a>
+    </div>
+
+    <!-- Business -->
+    <div class="price-card">
+      <h3>Business</h3>
+      <div class="price">$79<small>/mo</small></div>
+      <div class="desc">For agencies and teams</div>
+      <ul>
+        <li>Everything in Pro</li>
+        <li>Unlimited frames</li>
+        <li>8K resolution support</li>
+        <li>All formats (+ AVIF soon)</li>
+        <li>5GB file size limit</li>
+        <li>Team collaboration (soon)</li>
+        <li>API access (coming soon)</li>
+        <li>Priority support + Slack</li>
+      </ul>
+      <a href="index.html" class="btn secondary">Contact Sales</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq">
+  <h2>Frequently Asked Questions</h2>
+
+  <div class="faq-item">
+    <h3>Can I try Pro features before paying?</h3>
+    <p>Yes! Click the "Try Pro (Demo)" button in the app to test all Pro features. When you're ready, upgrade to keep access permanently.</p>
+  </div>
+
+  <div class="faq-item">
+    <h3>What payment methods do you accept?</h3>
+    <p>We accept all major credit cards (Visa, Mastercard, Amex) and debit cards through Stripe. Enterprise customers can pay via invoice.</p>
+  </div>
+
+  <div class="faq-item">
+    <h3>Can I cancel anytime?</h3>
+    <p>Absolutely. Cancel anytime with one click. You'll keep access until the end of your billing period, with no questions asked.</p>
+  </div>
+
+  <div class="faq-item">
+    <h3>What happens to my exports if I downgrade?</h3>
+    <p>All previously exported files remain yours forever. You'll just be limited to free tier features for new exports.</p>
+  </div>
+
+  <div class="faq-item">
+    <h3>Do you offer refunds?</h3>
+    <p>Yes, we offer a 14-day money-back guarantee. If you're not satisfied, we'll refund your purchase—no questions asked.</p>
+  </div>
+
+  <div class="faq-item">
+    <h3>Is there a student or nonprofit discount?</h3>
+    <p>Yes! We offer 50% off Pro plans for students and nonprofits. Contact us with verification and we'll set you up.</p>
+  </div>
+
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-inner">
+    <p>© 2025 ScrollMotion. All rights reserved.</p>
+  </div>
+</footer>
+
+</body>
+</html>

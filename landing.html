@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScrollMotion — Turn Videos into Scroll-Driven Experiences</title>
+<meta name="description" content="Transform videos and image sequences into interactive scroll experiences. Export as self-contained HTML. No dependencies, deploy anywhere.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a0a0b;
+  --bg-alt: #111;
+  --surface: rgba(255,255,255,0.02);
+  --surface-hover: rgba(255,255,255,0.04);
+  --border: rgba(255,255,255,0.06);
+  --text: #f0f0f0;
+  --text-dim: rgba(255,255,255,0.60);
+  --text-dimmer: rgba(255,255,255,0.30);
+  --accent: #fff;
+}
+html, body { height: 100%; background: var(--bg); color: var(--text); }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+
+/* Header */
+.header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: 60px; backdrop-filter: blur(12px); background: rgba(10,10,11,0.8);
+  border-bottom: 1px solid var(--border);
+}
+.header-inner {
+  max-width: 1200px; margin: 0 auto; height: 100%;
+  padding: 0 24px; display: flex; align-items: center; justify-content: space-between;
+}
+.logo-link {
+  display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text);
+}
+.logo-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(145deg, #1a1a1c 0%, #111 100%);
+  border: 1px solid var(--border); display: grid; place-items: center;
+}
+.logo-icon svg { width: 14px; height: 14px; opacity: 0.5; }
+.logo-text { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+.nav { display: flex; gap: 32px; align-items: center; }
+.nav a { font-size: 14px; color: var(--text-dim); text-decoration: none; transition: color 0.2s; }
+.nav a:hover { color: var(--text); }
+.btn-primary {
+  padding: 8px 18px; font-size: 14px; font-weight: 500;
+  background: #fff; color: #0a0a0b; border: none; border-radius: 6px;
+  cursor: pointer; text-decoration: none; transition: opacity 0.2s;
+  font-family: inherit;
+}
+.btn-primary:hover { opacity: 0.9; }
+
+/* Hero */
+.hero {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  padding: 120px 24px 80px;
+}
+.hero-inner { max-width: 900px; text-align: center; }
+.badge {
+  display: inline-block; padding: 4px 14px; margin-bottom: 24px;
+  font-size: 11px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+  color: var(--text-dimmer);
+}
+.hero h1 {
+  font-size: clamp(40px, 6vw, 68px); font-weight: 700; letter-spacing: -1.5px;
+  line-height: 1.1; margin-bottom: 20px;
+  background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.hero p {
+  font-size: 18px; color: var(--text-dim); line-height: 1.6; margin-bottom: 36px;
+}
+.cta-group { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn-large {
+  padding: 14px 32px; font-size: 15px; font-weight: 500;
+  border-radius: 8px; cursor: pointer; transition: all 0.2s;
+  text-decoration: none; font-family: inherit;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-large.primary { background: #fff; color: #0a0a0b; border: none; }
+.btn-large.primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-large.secondary {
+  background: transparent; color: var(--text-dim); border: 1px solid var(--border);
+}
+.btn-large.secondary:hover { background: var(--surface); color: var(--text); }
+.hero-meta { margin-top: 20px; font-size: 13px; color: var(--text-dimmer); }
+.hero-meta span { margin: 0 8px; }
+
+/* Features */
+.features {
+  padding: 100px 24px; background: var(--bg-alt);
+  border-top: 1px solid var(--border);
+}
+.features-inner { max-width: 1100px; margin: 0 auto; }
+.section-label {
+  font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--text-dimmer); text-align: center; margin-bottom: 12px;
+}
+.section-title {
+  font-size: 36px; font-weight: 700; text-align: center; margin-bottom: 60px;
+  letter-spacing: -0.5px;
+}
+.feature-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+.feature-card {
+  padding: 28px 24px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; transition: all 0.3s;
+}
+.feature-card:hover { background: var(--surface-hover); transform: translateY(-2px); }
+.feature-icon {
+  width: 44px; height: 44px; border-radius: 10px; background: rgba(255,255,255,0.05);
+  display: grid; place-items: center; margin-bottom: 16px; font-size: 24px;
+}
+.feature-card h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+.feature-card p { font-size: 14px; color: var(--text-dim); line-height: 1.6; }
+
+/* Pricing */
+.pricing {
+  padding: 100px 24px;
+}
+.pricing-inner { max-width: 1100px; margin: 0 auto; }
+.pricing-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px; max-width: 1000px; margin: 0 auto;
+}
+.price-card {
+  padding: 32px 28px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; position: relative; transition: all 0.3s;
+}
+.price-card.featured {
+  background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.12);
+  transform: scale(1.02);
+}
+.price-card.featured::before {
+  content: 'POPULAR'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+  padding: 4px 14px; font-size: 10px; font-weight: 600; letter-spacing: 1.2px;
+  background: #fff; color: #0a0a0b; border-radius: 20px;
+}
+.price-card h3 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+.price-card .price {
+  font-size: 40px; font-weight: 700; margin-bottom: 6px;
+}
+.price-card .price small { font-size: 16px; color: var(--text-dim); font-weight: 400; }
+.price-card .desc { font-size: 14px; color: var(--text-dim); margin-bottom: 24px; }
+.price-card ul { list-style: none; margin-bottom: 28px; }
+.price-card li {
+  padding: 8px 0; font-size: 14px; color: var(--text-dim);
+  display: flex; align-items: start; gap: 10px;
+}
+.price-card li::before {
+  content: '✓'; color: rgba(255,255,255,0.4); font-weight: 600; flex-shrink: 0;
+}
+.price-card .btn-large { width: 100%; justify-content: center; }
+
+/* CTA Section */
+.cta-section {
+  padding: 100px 24px; background: var(--bg-alt); border-top: 1px solid var(--border);
+}
+.cta-inner {
+  max-width: 700px; margin: 0 auto; text-align: center;
+}
+.cta-section h2 {
+  font-size: 42px; font-weight: 700; margin-bottom: 16px; letter-spacing: -0.5px;
+}
+.cta-section p {
+  font-size: 18px; color: var(--text-dim); margin-bottom: 32px;
+}
+
+/* Footer */
+.footer {
+  padding: 60px 24px 40px; border-top: 1px solid var(--border);
+}
+.footer-inner { max-width: 1100px; margin: 0 auto; }
+.footer-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 40px; margin-bottom: 40px;
+}
+.footer-col h4 {
+  font-size: 12px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+  margin-bottom: 16px; color: var(--text-dimmer);
+}
+.footer-col a {
+  display: block; padding: 6px 0; font-size: 14px; color: var(--text-dim);
+  text-decoration: none; transition: color 0.2s;
+}
+.footer-col a:hover { color: var(--text); }
+.footer-bottom {
+  padding-top: 30px; border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 16px;
+}
+.footer-bottom p { font-size: 13px; color: var(--text-dimmer); }
+
+@media (max-width: 768px) {
+  .nav { display: none; }
+  .hero h1 { font-size: 40px; }
+  .section-title { font-size: 28px; }
+  .pricing-grid { grid-template-columns: 1fr; }
+  .price-card.featured { transform: scale(1); }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-inner">
+    <a href="/" class="logo-link">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 19,12 8,19"/></svg>
+      </div>
+      <span class="logo-text">ScrollMotion</span>
+    </a>
+    <nav class="nav">
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#examples">Examples</a>
+      <a href="index.html" class="btn-primary">Launch App →</a>
+    </nav>
+  </div>
+</header>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="badge">Video to Scroll • Zero Dependencies</div>
+    <h1>Turn Videos into<br>Scroll-Driven Magic</h1>
+    <p>
+      Transform any video or image sequence into an interactive scroll experience.
+      Export as self-contained HTML. No frameworks, no dependencies—deploy anywhere.
+    </p>
+    <div class="cta-group">
+      <a href="index.html" class="btn-large primary">
+        Start Free
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="#examples" class="btn-large secondary">See Examples ↓</a>
+    </div>
+    <div class="hero-meta">
+      ✓ No credit card required <span>•</span> 3 free exports
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features" id="features">
+  <div class="features-inner">
+    <div class="section-label">Features</div>
+    <h2 class="section-title">Everything you need to create scroll experiences</h2>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🎬</div>
+        <h3>Videos & Image Sequences</h3>
+        <p>Support for MP4, MOV, WebM videos, plus multi-image uploads and ZIP files.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Export in Seconds</h3>
+        <p>Client-side processing means instant exports—no uploads, no waiting, no servers.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📦</div>
+        <h3>Self-Contained HTML</h3>
+        <p>Frames embedded as base64. One file, zero dependencies. Drop it anywhere.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎨</div>
+        <h3>Full Quality Control</h3>
+        <p>Adjust frame count, resolution (up to 4K), aspect ratio, format (JPEG/WebP), and compression.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📱</div>
+        <h3>Mobile Optimized</h3>
+        <p>Smooth scrolling on any device. Responsive and performant out of the box.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🚀</div>
+        <h3>Deploy Anywhere</h3>
+        <p>Works on Vercel, Netlify, GitHub Pages, S3—or just open the HTML file locally.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section class="pricing" id="pricing">
+  <div class="pricing-inner">
+    <div class="section-label">Pricing</div>
+    <h2 class="section-title">Simple, transparent pricing</h2>
+    <div class="pricing-grid">
+
+      <!-- Free -->
+      <div class="price-card">
+        <h3>Free</h3>
+        <div class="price">$0<small>/month</small></div>
+        <div class="desc">Perfect for trying it out</div>
+        <ul>
+          <li>3 exports per month</li>
+          <li>Up to 50 frames</li>
+          <li>720p max resolution</li>
+          <li>JPEG format only</li>
+          <li>50MB file size limit</li>
+          <li>Watermark on exports</li>
+        </ul>
+        <a href="index.html" class="btn-large secondary">Get Started</a>
+      </div>
+
+      <!-- Pro -->
+      <div class="price-card featured">
+        <h3>Pro</h3>
+        <div class="price">$15<small>/month</small></div>
+        <div class="desc">For creators and designers</div>
+        <ul>
+          <li>Unlimited exports</li>
+          <li>Up to 300 frames</li>
+          <li>4K resolution support</li>
+          <li>JPEG + WebP formats</li>
+          <li>500MB file size limit</li>
+          <li>No watermark</li>
+        </ul>
+        <a href="index.html" class="btn-large primary">Start Pro Trial</a>
+      </div>
+
+      <!-- Business -->
+      <div class="price-card">
+        <h3>Business</h3>
+        <div class="price">$79<small>/month</small></div>
+        <div class="desc">For agencies and teams</div>
+        <ul>
+          <li>Everything in Pro</li>
+          <li>Unlimited frames</li>
+          <li>8K resolution support</li>
+          <li>All formats (+ AVIF)</li>
+          <li>5GB file size limit</li>
+          <li>Priority support</li>
+          <li>API access (coming soon)</li>
+        </ul>
+        <a href="index.html" class="btn-large secondary">Contact Sales</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-inner">
+    <h2>Ready to get started?</h2>
+    <p>Join thousands of creators using ScrollMotion to build interactive experiences.</p>
+    <a href="index.html" class="btn-large primary">
+      Launch App — It's Free
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#examples">Examples</a>
+        <a href="index.html">Launch App</a>
+      </div>
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <a href="#">Documentation</a>
+        <a href="#">Tutorials</a>
+        <a href="#">API Reference</a>
+        <a href="#">Blog</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="#">About</a>
+        <a href="#">Contact</a>
+        <a href="#">Terms</a>
+        <a href="#">Privacy</a>
+      </div>
+      <div class="footer-col">
+        <h4>Connect</h4>
+        <a href="#">Twitter</a>
+        <a href="#">GitHub</a>
+        <a href="#">Discord</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 ScrollMotion. All rights reserved.</p>
+      <p>Built with ❤️ for creators</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

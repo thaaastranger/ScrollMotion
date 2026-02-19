@@ -43,6 +43,7 @@
     <div class="top-l">
       <div class="top-logo"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 19,12 8,19"/></svg></div>
       <span class="top-name">ScrollMotion</span>
+      <span class="top-tier" id="tierBadge">Free</span>
       <span class="top-file" id="fname"></span>
     </div>
     <button class="btn-sm" id="bnew">
@@ -148,6 +149,31 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Upgrade Modal -->
+<div class="modal" id="upgradeModal">
+  <div class="modal-bg"></div>
+  <div class="modal-box">
+    <button class="modal-close" id="modalClose">×</button>
+    <div class="modal-icon">🚀</div>
+    <h2 class="modal-title">Upgrade to Pro</h2>
+    <p class="modal-desc" id="modalDesc">You've reached the free tier limit.</p>
+    <div class="modal-tier">
+      <div class="modal-tier-name">Pro Plan</div>
+      <div class="modal-tier-price">$15<small>/month</small></div>
+      <ul class="modal-features">
+        <li>Unlimited exports</li>
+        <li>Up to 300 frames</li>
+        <li>4K resolution support</li>
+        <li>WebP format support</li>
+        <li>No watermark</li>
+        <li>500MB file size limit</li>
+      </ul>
+      <button class="btn-p" id="btnUpgrade">Upgrade Now</button>
+      <button class="btn-o" id="btnDemoTier" style="margin-top: 8px;">Try Pro (Demo)</button>
     </div>
   </div>
 </div>
