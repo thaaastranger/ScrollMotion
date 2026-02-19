@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScrollMotion — Video → Scroll</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Upload -->
+<div class="upload" id="U">
+  <div class="logo">
+    <div class="logo-mark">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 19,12 8,19"/></svg>
+    </div>
+    <h1>ScrollMotion</h1>
+    <p>Turn any video into scroll-driven playback</p>
+  </div>
+  <div class="drop" id="drop">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <div class="dl">Drop a video or click to browse</div>
+    <div class="dh">MP4 · MOV · WebM</div>
+  </div>
+  <input type="file" id="fi" accept="video/*" style="display:none">
+</div>
+
+<!-- Workspace -->
+<div class="ws" id="W">
+  <div class="top">
+    <div class="top-l">
+      <div class="top-logo"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 19,12 8,19"/></svg></div>
+      <span class="top-name">ScrollMotion</span>
+      <span class="top-file" id="fname"></span>
+    </div>
+    <button class="btn-sm" id="bnew">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      New
+    </button>
+  </div>
+
+  <div class="main">
+    <!-- Preview -->
+    <div class="pv">
+      <div class="ov" id="ovLoad"><div class="ov-spin"></div><div class="ov-t" id="ovLoadT">Loading video…</div></div>
+      <div class="ov" id="ovExport">
+        <div class="ov-spin"></div>
+        <div class="ov-t" id="ovExT">Extracting frames…</div>
+        <div class="ov-bar"><div class="ov-bar-f" id="ovExBar"></div></div>
+        <div class="ov-s" id="ovExPct">0%</div>
+      </div>
+      <div class="pv-badge" id="badge">0 / 80</div>
+      <div class="pv-prog" id="prog"></div>
+      <div class="pv-hint" id="hint">↓ scroll to play</div>
+      <div class="pv-scroll" id="pvScroll">
+        <div id="runway" style="position:relative">
+          <div class="pv-sticky"><video id="vid" muted playsinline preload="auto"></video></div>
+        </div>
+      </div>
+      <div class="scrub" id="scrub"><div class="scrub-f" id="scrubF"></div><div class="scrub-t" id="scrubT"></div></div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sb">
+      <div class="sb-tabs">
+        <button class="sb-tab on" data-t="set">Settings</button>
+        <button class="sb-tab" data-t="exp">Export</button>
+      </div>
+      <div class="sb-body">
+        <!-- Settings -->
+        <div class="sb-pn on" id="pnSet">
+          <dl class="meta" id="metaG">
+            <div><dt>Duration</dt><dd id="mDur">—</dd></div>
+            <div><dt>Resolution</dt><dd id="mRes">—</dd></div>
+            <div><dt>Frames</dt><dd id="mFr">80</dd></div>
+            <div><dt>Scroll</dt><dd id="mSc">3.2k px</dd></div>
+          </dl>
+          <div class="sg">
+            <div class="sg-h"><span class="sg-l">Frames</span><span class="sg-v" id="vFr">80</span></div>
+            <input type="range" id="rFr" min="20" max="300" step="5" value="80">
+            <div class="sg-hint">More frames = smoother but heavier. 60–120 is ideal.</div>
+          </div>
+          <div class="sg">
+            <div class="sg-h"><span class="sg-l">Scroll speed</span><span class="sg-v" id="vSp">40<small>px</small></span></div>
+            <input type="range" id="rSp" min="15" max="100" step="5" value="40">
+            <div class="sg-hint">Pixels per frame. Lower = slower and more cinematic.</div>
+          </div>
+          <div class="note">💡 The preview scrubs the video natively. Frames are only extracted when you export.</div>
+        </div>
+        <!-- Export -->
+        <div class="sb-pn" id="pnExp">
+          <div id="exSum"></div>
+          <div class="ex-desc">Self-contained HTML with frames as base64. Zero dependencies — deploy anywhere.</div>
+          <button class="btn-p" id="bDl" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download HTML
+          </button>
+          <button class="btn-o" id="bCp" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Copy Code
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
