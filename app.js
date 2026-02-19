@@ -4,6 +4,7 @@
   let mode = 'video'; // 'video' or 'images'
   let imageFrames = []; // Base64 data URLs for image sequences
   let jpegQuality = 0.8, exportFormat = 'jpeg';
+  let exportResolution = 'original', exportAspect = 'original';
 
   // Refs
   const $ = id => document.getElementById(id);
@@ -23,6 +24,7 @@
   const dropLabel = $('dropLabel'), dropHint = $('dropHint');
   const fiImg = $('fiImg'), fiZip = $('fiZip');
   const rQual = $('rQual'), vQual = $('vQual'), selFormat = $('selFormat');
+  const selResolution = $('selResolution'), selAspect = $('selAspect');
 
   // ── Mode Toggle ──
   uplTabs.forEach(tab => {
@@ -300,6 +302,8 @@
     vQual.innerHTML = e.target.value + '<small>%</small>';
   };
   selFormat.onchange = e => { exportFormat = e.target.value; };
+  selResolution.onchange = e => { exportResolution = e.target.value; };
+  selAspect.onchange = e => { exportAspect = e.target.value; };
 
   function updateRunway() { const h = fc * ppf; runway.style.height = h + 'px'; mSc.textContent = (h/1000).toFixed(1) + 'k px'; }
   function updateMeta() { mDur.textContent = dur.toFixed(1) + 's'; mRes.textContent = vw + '×' + vh; mFr.textContent = fc; updateRunway(); }
@@ -310,6 +314,77 @@
     ].map(([l,v]) => `<div class="ex-row"><span class="ex-rl">${l}</span><span class="ex-rv">${v}</span></div>`).join('');
   }
   updateExSum();
+
+  // ── Calculate Export Dimensions ──
+  function calculateExportDimensions() {
+    let targetW = vw, targetH = vh;
+    let sourceW = vw, sourceH = vh;
+
+    // Step 1: Apply resolution preset
+    if (exportResolution !== 'original') {
+      const resolutions = {
+        '720p': { w: 1280, h: 720 },
+        '1080p': { w: 1920, h: 1080 },
+        '2k': { w: 2560, h: 1440 },
+        '4k': { w: 3840, h: 2160 }
+      };
+      const res = resolutions[exportResolution];
+      if (res) {
+        // Scale to fit within target resolution while maintaining aspect ratio
+        const scale = Math.min(res.w / sourceW, res.h / sourceH);
+        targetW = Math.round(sourceW * scale);
+        targetH = Math.round(sourceH * scale);
+      }
+    }
+
+    // Step 2: Apply aspect ratio adjustment
+    if (exportAspect !== 'original') {
+      const aspects = {
+        '16:9': 16/9,
+        '4:3': 4/3,
+        '1:1': 1/1,
+        '9:16': 9/16
+      };
+      const targetAspect = aspects[exportAspect];
+      if (targetAspect) {
+        const currentAspect = targetW / targetH;
+
+        if (currentAspect > targetAspect) {
+          // Too wide, reduce width
+          targetW = Math.round(targetH * targetAspect);
+        } else if (currentAspect < targetAspect) {
+          // Too tall, reduce height
+          targetH = Math.round(targetW / targetAspect);
+        }
+      }
+    }
+
+    // Calculate source crop area (center crop)
+    const sourceAspect = sourceW / sourceH;
+    const targetAspect = targetW / targetH;
+    let sx = 0, sy = 0, sw = sourceW, sh = sourceH;
+
+    if (exportAspect !== 'original') {
+      if (sourceAspect > targetAspect) {
+        // Source is wider, crop width
+        sw = Math.round(sourceH * targetAspect);
+        sx = Math.round((sourceW - sw) / 2);
+      } else if (sourceAspect < targetAspect) {
+        // Source is taller, crop height
+        sh = Math.round(sourceW / targetAspect);
+        sy = Math.round((sourceH - sh) / 2);
+      }
+    }
+
+    return {
+      canvasW: targetW,
+      canvasH: targetH,
+      sourceX: sx,
+      sourceY: sy,
+      sourceW: sw,
+      sourceH: sh
+    };
+  }
 
   // ── Sidebar tabs ──
   document.querySelectorAll('.sb-tab').forEach(tab => {
@@ -352,11 +427,15 @@
     let frames = [];
     const mimeType = exportFormat === 'webp' ? 'image/webp' : 'image/jpeg';
 
+    // Calculate export dimensions based on resolution and aspect ratio settings
+    const dims = calculateExportDimensions();
+
     if (mode === 'video') {
-      // Existing video extraction logic with compression settings
+      // Video extraction with resolution/aspect ratio support
       ovExT.textContent = 'Extracting ' + fc + ' frames…';
       const c = document.createElement('canvas');
-      c.width = vw; c.height = vh;
+      c.width = dims.canvasW;
+      c.height = dims.canvasH;
       const ctx = c.getContext('2d');
 
       for (let i = 0; i < fc; i++) {
@@ -367,7 +446,8 @@
             if (d) return;
             d = true;
             try {
-              ctx.drawImage(vid, 0, 0, vw, vh);
+              // Draw with cropping/scaling
+              ctx.drawImage(vid, dims.sourceX, dims.sourceY, dims.sourceW, dims.sourceH, 0, 0, dims.canvasW, dims.canvasH);
             } catch(e){}
             frames.push(c.toDataURL(mimeType, jpegQuality));
             res();
@@ -381,18 +461,20 @@
         ovExBar.style.width = pct + '%'; ovExPct.textContent = pct + '%';
       }
     } else {
-      // Image sequence: re-compress with selected quality/format
+      // Image sequence: re-compress with resolution/aspect ratio support
       ovExT.textContent = 'Compressing ' + imageFrames.length + ' frames…';
       const c = document.createElement('canvas');
-      c.width = vw; c.height = vh;
+      c.width = dims.canvasW;
+      c.height = dims.canvasH;
       const ctx = c.getContext('2d');
 
       for (let i = 0; i < imageFrames.length; i++) {
         await new Promise((res) => {
           const img = new Image();
           img.onload = () => {
-            ctx.clearRect(0, 0, vw, vh);
-            ctx.drawImage(img, 0, 0, vw, vh);
+            ctx.clearRect(0, 0, dims.canvasW, dims.canvasH);
+            // Draw with cropping/scaling
+            ctx.drawImage(img, dims.sourceX, dims.sourceY, dims.sourceW, dims.sourceH, 0, 0, dims.canvasW, dims.canvasH);
             frames.push(c.toDataURL(mimeType, jpegQuality));
             res();
           };

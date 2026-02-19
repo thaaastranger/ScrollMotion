@@ -98,6 +98,28 @@
             <div class="sg-hint">Pixels per frame. Lower = slower and more cinematic.</div>
           </div>
           <div class="sg">
+            <div class="sg-h"><span class="sg-l">Export Resolution</span></div>
+            <select id="selResolution" class="sel-format">
+              <option value="original">Original</option>
+              <option value="720p">720p (1280×720)</option>
+              <option value="1080p">1080p (1920×1080)</option>
+              <option value="2k">2K (2560×1440)</option>
+              <option value="4k">4K (3840×2160)</option>
+            </select>
+            <div class="sg-hint">Lower resolutions = much smaller file sizes.</div>
+          </div>
+          <div class="sg">
+            <div class="sg-h"><span class="sg-l">Aspect Ratio</span></div>
+            <select id="selAspect" class="sel-format">
+              <option value="original">Original</option>
+              <option value="16:9">16:9 (Widescreen)</option>
+              <option value="4:3">4:3 (Standard)</option>
+              <option value="1:1">1:1 (Square)</option>
+              <option value="9:16">9:16 (Vertical)</option>
+            </select>
+            <div class="sg-hint">Crops/fits video to target aspect ratio.</div>
+          </div>
+          <div class="sg">
             <div class="sg-h"><span class="sg-l">Quality</span><span class="sg-v" id="vQual">80<small>%</small></span></div>
             <input type="range" id="rQual" min="50" max="100" step="5" value="80">
             <div class="sg-hint">Lower = smaller files but reduced quality.</div>
