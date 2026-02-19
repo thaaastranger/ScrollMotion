@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
 
@@ -19,12 +20,21 @@
     <h1>ScrollMotion</h1>
     <p>Turn any video into scroll-driven playback</p>
   </div>
+
+  <!-- Mode Selector -->
+  <div class="upload-tabs">
+    <button class="upl-tab on" data-mode="video">Video</button>
+    <button class="upl-tab" data-mode="images">Image Sequence</button>
+  </div>
+
   <div class="drop" id="drop">
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-    <div class="dl">Drop a video or click to browse</div>
-    <div class="dh">MP4 · MOV · WebM</div>
+    <div class="dl" id="dropLabel">Drop a video or click to browse</div>
+    <div class="dh" id="dropHint">MP4 · MOV · WebM</div>
   </div>
   <input type="file" id="fi" accept="video/*" style="display:none">
+  <input type="file" id="fiImg" accept="image/*" multiple style="display:none">
+  <input type="file" id="fiZip" accept=".zip,application/zip" style="display:none">
 </div>
 
 <!-- Workspace -->
@@ -86,6 +96,19 @@
             <div class="sg-h"><span class="sg-l">Scroll speed</span><span class="sg-v" id="vSp">40<small>px</small></span></div>
             <input type="range" id="rSp" min="15" max="100" step="5" value="40">
             <div class="sg-hint">Pixels per frame. Lower = slower and more cinematic.</div>
+          </div>
+          <div class="sg">
+            <div class="sg-h"><span class="sg-l">Quality</span><span class="sg-v" id="vQual">80<small>%</small></span></div>
+            <input type="range" id="rQual" min="50" max="100" step="5" value="80">
+            <div class="sg-hint">Lower = smaller files but reduced quality.</div>
+          </div>
+          <div class="sg">
+            <div class="sg-h"><span class="sg-l">Format</span></div>
+            <select id="selFormat" class="sel-format">
+              <option value="jpeg">JPEG</option>
+              <option value="webp">WebP (25% smaller)</option>
+            </select>
+            <div class="sg-hint">WebP: 25-35% smaller with same quality.</div>
           </div>
           <div class="note">💡 The preview scrubs the video natively. Frames are only extracted when you export.</div>
         </div>
