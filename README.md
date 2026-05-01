@@ -33,32 +33,6 @@ No build step required—just open `index.html` in your browser.
 
 
 
-## Pricing Tiers
-
-### Free
-- 3 exports/month
-- Up to 50 frames
-- 720p max resolution
-- JPEG only
-- 50MB file limit
-- Watermark
-
-### Pro ($15/month)
-- Unlimited exports
-- Up to 300 frames
-- 4K resolution
-- JPEG + WebP
-- 500MB file limit
-- No watermark
-
-### Business ($79/month)
-- Everything in Pro
-- Unlimited frames
-- 8K resolution
-- All formats
-- 5GB file limit
-- API access (coming soon)
-
 ---
 
 ## How It Works
