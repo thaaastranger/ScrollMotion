@@ -64,37 +64,7 @@ scrollmotion/
 ├── app.js             # Core application logic + tier limits
 ├── styles.css         # All styles
 └── README.md          # This file
-```
-
----
-
-## Development Roadmap
-
-### ✅ Phase 1: MVP (Complete)
-- Video frame extraction
-- Basic export to HTML
-- Image sequence support
-- Compression controls (quality, format, resolution)
-
-### ✅ Phase 2: Product Infrastructure (Complete)
-- Landing page
-- Pricing page
-- Tier-based feature gating
-- Upgrade modals
-
-### 🚧 Phase 3: Monetization (In Progress)
-- [ ] Supabase Auth integration
-- [ ] Stripe payment integration
-- [ ] User dashboard
-- [ ] Usage analytics
-
-### 📋 Phase 4: Advanced Features (Planned)
-- [ ] Timeline editor (trim, speed curves)
-- [ ] Templates library
-- [ ] Team collaboration
-- [ ] API access
-- [ ] AVIF format support
-- [ ] Shareable CDN hosting
+``
 
 ---
 
