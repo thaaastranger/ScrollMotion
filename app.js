@@ -250,7 +250,7 @@
     const fallbackName = currentUser.user_metadata?.full_name || '';
     const { data: inserted, error: insertError } = await supabaseClient
       .from('profiles')
-      .upsert({
+      .insert({
         id: currentUser.id,
         email: currentUser.email,
         full_name: fallbackName
@@ -258,7 +258,18 @@
       .select('id,email,full_name,avatar_url,tier,exports_used,created_at,updated_at')
       .single();
 
-    if (insertError) throw insertError;
+    if (insertError) {
+      if (insertError.code === '23505') {
+        const { data: existing, error: retryError } = await supabaseClient
+          .from('profiles')
+          .select('id,email,full_name,avatar_url,tier,exports_used,created_at,updated_at')
+          .eq('id', currentUser.id)
+          .single();
+        if (retryError) throw retryError;
+        return existing;
+      }
+      throw insertError;
+    }
     return inserted;
   }
 
@@ -283,7 +294,8 @@
     } catch (err) {
       console.error(err);
       renderAuthState();
-      setStatus(profileStatus, 'Profile could not be loaded. Check the Supabase schema and policies.', 'err');
+      const detail = err?.message ? ` ${err.message}` : '';
+      setStatus(profileStatus, `Profile could not be loaded.${detail}`, 'err');
     }
   }
 

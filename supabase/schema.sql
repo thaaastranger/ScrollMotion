@@ -147,6 +147,10 @@ $$;
 alter table public.profiles enable row level security;
 alter table public.exports enable row level security;
 
+grant usage on schema public to anon, authenticated;
+grant select on public.profiles to authenticated;
+grant insert (id, email, full_name) on public.profiles to authenticated;
+grant select on public.exports to authenticated;
 revoke update on public.profiles from anon, authenticated;
 revoke all on function public.record_export(text, text, integer, integer, text, text, text) from public, anon;
 grant update (full_name, avatar_url) on public.profiles to authenticated;
