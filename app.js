@@ -56,7 +56,7 @@
   const fname = $('fname');
   const rFr = $('rFr'), rSp = $('rSp'), vFr = $('vFr'), vSp = $('vSp');
   const mDur = $('mDur'), mRes = $('mRes'), mFr = $('mFr'), mSc = $('mSc');
-  const bDl = $('bDl'), bCp = $('bCp');
+  const bDl = $('bDl'), bCp = $('bCp'), bEl = $('bEl');
 
   // New refs for image sequence support
   const uplTabs = document.querySelectorAll('.upl-tab');
@@ -257,7 +257,7 @@
         ovLoad.classList.remove('on');
         badge.classList.add('on');
         scrub.classList.add('on');
-        bDl.disabled = false; bCp.disabled = false;
+        bDl.disabled = false; bCp.disabled = false; bEl.disabled = false;
         updateMeta(); updateRunway(); updateExSum();
       }
     };
@@ -332,7 +332,7 @@
     ovLoad.classList.remove('on');
     badge.classList.add('on');
     scrub.classList.add('on');
-    bDl.disabled = false; bCp.disabled = false;
+    bDl.disabled = false; bCp.disabled = false; bEl.disabled = false;
 
     // Update UI
     rFr.value = fc;
@@ -556,7 +556,7 @@
     vid.src = ''; ready = false;
     W.classList.remove('on'); U.classList.remove('gone');
     ovLoad.classList.remove('on'); badge.classList.remove('on'); scrub.classList.remove('on');
-    bDl.disabled = true; bCp.disabled = true;
+    bDl.disabled = true; bCp.disabled = true; bEl.disabled = true;
     fi.value = ''; fiImg.value = ''; fiZip.value = '';
 
     // Reset image sequence state
@@ -574,7 +574,17 @@
   };
 
   // ── Export ──
-  async function doExport(mode_export) {
+  const copiedIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  const copyCodeButtonHTML = bCp.innerHTML;
+  const copyElementButtonHTML = bEl.innerHTML;
+
+  async function copyToClipboard(html, button, restoreHTML) {
+    await navigator.clipboard.writeText(html);
+    button.innerHTML = copiedIcon + ' Copied!';
+    setTimeout(() => { button.innerHTML = restoreHTML; }, 2200);
+  }
+
+  async function doExport(exportMode) {
     if (!ready) return;
 
     // Check export limit
@@ -644,16 +654,16 @@
       }
     }
 
-    const html = buildHTML(frames);
-    if (mode_export === 'dl') {
+    const html = exportMode === 'element' ? buildElementHTML(frames) : buildHTML(frames);
+    if (exportMode === 'dl') {
       const b = new Blob([html], {type:'text/html'});
       const a = document.createElement('a');
       a.href = URL.createObjectURL(b); a.download = 'scroll-video.html'; a.click();
       URL.revokeObjectURL(a.href);
+    } else if (exportMode === 'element') {
+      await copyToClipboard(html, bEl, copyElementButtonHTML);
     } else {
-      await navigator.clipboard.writeText(html);
-      bCp.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
-      setTimeout(() => { bCp.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> Copy Code'; }, 2200);
+      await copyToClipboard(html, bCp, copyCodeButtonHTML);
     }
 
     // Increment export count for free tier
@@ -667,6 +677,7 @@
 
   bDl.onclick = () => doExport('dl');
   bCp.onclick = () => doExport('cp');
+  bEl.onclick = () => doExport('element');
 
   function buildHTML(frames) {
     const h = fc * ppf;
@@ -681,5 +692,110 @@
 <script>var F=[${a}];
 (function(){var c=document.getElementById("c"),x=c.getContext("2d"),rw=document.getElementById("rw"),b=document.getElementById("b"),q=document.getElementById("q"),l=document.getElementById("l");var im=[],n=0,tot=F.length,cur=0,rf=false;F.forEach(function(s,i){var g=new Image;g.onload=function(){n++;if(i===0){c.width=g.naturalWidth;c.height=g.naturalHeight;p(0)}if(n===tot)l.classList.add("d")};g.src=s;im[i]=g});function p(i){var g=im[i];if(!g||!g.complete)return;x.drawImage(g,0,0,c.width,c.height)}function t(){var r=rw.getBoundingClientRect(),sc=rw.offsetHeight-window.innerHeight,s=Math.max(0,-r.top),v=Math.min(1,s/sc);b.style.width=(v*100)+"%";var i=Math.min(tot-1,Math.floor(v*tot));if(i!==cur&&im[i]){cur=i;p(i)}q.classList.toggle("g",v>0.03);rf=false}window.addEventListener("scroll",function(){if(!rf){rf=true;requestAnimationFrame(t)}},{passive:true});requestAnimationFrame(t)})();` + '<' + '/script>' + `
 </body></html>`;
+  }
+
+  function buildElementHTML(frames) {
+    const h = fc * ppf;
+    const data = JSON.stringify(frames).replace(/</g, '\\u003c');
+    return `<scroll-motion scroll-pixels="${h}" style="display:block;width:100%;">
+  <script type="application/json" data-scroll-motion-frames>${data}</` + `script>
+</scroll-motion>
+<script>
+(function(){
+  if(customElements.get("scroll-motion")) return;
+  customElements.define("scroll-motion", class extends HTMLElement {
+    connectedCallback(){
+      if(this._scrollMotionInit){
+        window.addEventListener("scroll", this._scrollMotionOnScroll, {passive:true});
+        window.addEventListener("resize", this._scrollMotionOnScroll);
+        requestAnimationFrame(this._scrollMotionUpdate);
+        return;
+      }
+      this._scrollMotionInit = true;
+      var host = this;
+      var source = host.querySelector("[data-scroll-motion-frames]");
+      var frames = [];
+      try { frames = JSON.parse(source ? source.textContent : "[]"); } catch(e) {}
+      var scrollPixels = parseInt(host.getAttribute("scroll-pixels"), 10) || (frames.length * 40) || 3200;
+      host.style.display = host.style.display || "block";
+      host.style.position = host.style.position || "relative";
+      host.style.minHeight = scrollPixels + "px";
+
+      var root = host.attachShadow({mode:"open"});
+      root.innerHTML = '<style>:host{display:block;position:relative;background:#000}.stage{position:absolute;inset:0}.sticky{position:sticky;top:var(--scroll-motion-top,0);height:100vh;width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#000}canvas{display:block;max-width:100%;max-height:100vh;object-fit:contain}.bar{position:fixed;top:0;left:0;height:2px;width:0;background:rgba(255,255,255,.32);z-index:2147483646;pointer-events:none}.hint{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:2147483646;pointer-events:none;text-align:center;transition:opacity .5s;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}.hint span{display:block;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:10px}.chev{width:14px;height:14px;border-right:1.5px solid rgba(255,255,255,.35);border-bottom:1.5px solid rgba(255,255,255,.35);transform:rotate(45deg);margin:0 auto;animation:sm-b 1.8s ease-in-out infinite}@keyframes sm-b{0%,100%{transform:rotate(45deg) translate(0,0)}50%{transform:rotate(45deg) translate(3px,3px)}}.hint.hide{opacity:0}.loader{position:fixed;inset:0;background:#000;z-index:2147483647;display:flex;align-items:center;justify-content:center;transition:opacity .6s}.loader.done{opacity:0;pointer-events:none}.spin{width:36px;height:36px;border:2px solid rgba(255,255,255,.1);border-top-color:rgba(255,255,255,.5);border-radius:50%;animation:sm-s .8s linear infinite}@keyframes sm-s{to{transform:rotate(360deg)}}:host([progress="false"]) .bar,:host([hint="false"]) .hint{display:none}</style><div class="loader"><div class="spin"></div></div><div class="bar"></div><div class="hint"><span>Scroll</span><div class="chev"></div></div><div class="stage"><div class="sticky"><canvas></canvas></div></div>';
+
+      var canvas = root.querySelector("canvas");
+      var ctx = canvas.getContext("2d");
+      var bar = root.querySelector(".bar");
+      var hint = root.querySelector(".hint");
+      var loader = root.querySelector(".loader");
+      var images = [];
+      var loaded = 0;
+      var total = frames.length;
+      var current = 0;
+      var ticking = false;
+
+      function paint(index){
+        var img = images[index];
+        if(!img || !img.complete || !canvas.width || !canvas.height) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      }
+
+      if(!total){
+        loader.classList.add("done");
+      } else {
+        frames.forEach(function(src, index){
+          var img = new Image();
+          img.onload = function(){
+            loaded++;
+            if(index === 0){
+              canvas.width = img.naturalWidth;
+              canvas.height = img.naturalHeight;
+              paint(0);
+            }
+            if(loaded === total) loader.classList.add("done");
+          };
+          img.src = src;
+          images[index] = img;
+        });
+      }
+
+      host._scrollMotionUpdate = function(){
+        var distance = host.offsetHeight - window.innerHeight;
+        var rect = host.getBoundingClientRect();
+        var seen = Math.max(0, -rect.top);
+        var progress = distance > 0 ? Math.min(1, seen / distance) : 0;
+        bar.style.width = (progress * 100) + "%";
+        var index = Math.min(total - 1, Math.floor(progress * total));
+        if(index !== current && images[index]){
+          current = index;
+          paint(index);
+        }
+        hint.classList.toggle("hide", progress > 0.03);
+        ticking = false;
+      };
+
+      host._scrollMotionOnScroll = function(){
+        if(!ticking){
+          ticking = true;
+          requestAnimationFrame(host._scrollMotionUpdate);
+        }
+      };
+
+      window.addEventListener("scroll", host._scrollMotionOnScroll, {passive:true});
+      window.addEventListener("resize", host._scrollMotionOnScroll);
+      requestAnimationFrame(host._scrollMotionUpdate);
+    }
+
+    disconnectedCallback(){
+      if(this._scrollMotionOnScroll){
+        window.removeEventListener("scroll", this._scrollMotionOnScroll);
+        window.removeEventListener("resize", this._scrollMotionOnScroll);
+      }
+    }
+  });
+})();
+</` + `script>`;
   }
 })();
