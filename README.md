@@ -15,6 +15,7 @@ Transform videos and image sequences into interactive scroll-driven playback. Ex
 - 📦 **Self-Contained HTML** - Frames embedded as base64, zero dependencies
 - 🎨 **Full Quality Control** - Adjust frames, resolution (up to 4K), aspect ratio, format (JPEG/WebP), compression
 - 📱 **Mobile Optimized** - Smooth scrolling on any device
+- 🔐 **Magic-Link Accounts** - Supabase-ready login, registration, profile names, and avatars
 - 🚀 **Deploy Anywhere** - Works on Vercel, Netlify, GitHub Pages, S3, or locally
 
 ---
@@ -61,10 +62,14 @@ scrollmotion/
 ├── index.html          # Main app (upload & editor)
 ├── landing.html        # Marketing landing page
 ├── pricing.html        # Pricing page
+├── auth-config.js      # Public Supabase URL + anon key config
+├── supabase/           # SQL schema and magic-link email template
 ├── app.js             # Core application logic + tier limits
 ├── styles.css         # All styles
 └── README.md          # This file
-``
+```
+
+See `supabase/README.md` for passwordless auth setup.
 
 ---
 

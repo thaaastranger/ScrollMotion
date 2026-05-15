@@ -8,8 +8,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-config.js"></script>
 </head>
 <body>
+
+<div class="auth-top">
+  <a class="support-link" href="mailto:sobhanrabbani86@gmail.com">Support</a>
+  <button class="auth-chip" id="authOpen">Login</button>
+</div>
 
 <!-- Upload -->
 <div class="upload" id="U">
@@ -46,10 +53,17 @@
       <span class="top-tier" id="tierBadge">Free</span>
       <span class="top-file" id="fname"></span>
     </div>
-    <button class="btn-sm" id="bnew">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-      New
-    </button>
+    <div class="top-actions">
+      <a class="support-link" href="mailto:sobhanrabbani86@gmail.com">Support</a>
+      <button class="profile-chip" id="accountBtn">
+        <span class="profile-avatar" id="topAvatar">S</span>
+        <span id="accountName">Login</span>
+      </button>
+      <button class="btn-sm" id="bnew">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        New
+      </button>
+    </div>
   </div>
 
   <div class="main">
@@ -153,6 +167,53 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Auth Modal -->
+<div class="modal" id="authModal">
+  <div class="modal-bg"></div>
+  <div class="modal-box auth-box">
+    <button class="modal-close" id="authClose">×</button>
+    <div class="auth-panel" id="authSignedOut">
+      <div class="auth-mark">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 19,12 8,19"/></svg>
+      </div>
+      <h2 class="modal-title" id="authTitle">Login</h2>
+      <p class="modal-desc" id="authDesc">Enter your email and we will send a secure magic link.</p>
+      <div class="auth-tabs">
+        <button class="auth-tab on" data-auth-mode="login">Login</button>
+        <button class="auth-tab" data-auth-mode="register">Register</button>
+      </div>
+      <form class="auth-form" id="authForm">
+        <label class="field-label" for="authEmail">Email</label>
+        <input class="text-field" id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" required>
+        <div id="nameFieldWrap">
+          <label class="field-label" for="authName">Name</label>
+          <input class="text-field" id="authName" type="text" autocomplete="name" placeholder="Your name">
+        </div>
+        <button class="btn-p" id="authSubmit" type="submit">Send Magic Link</button>
+      </form>
+      <p class="auth-status" id="authStatus"></p>
+      <p class="auth-foot">Need help? Email <a href="mailto:sobhanrabbani86@gmail.com">sobhanrabbani86@gmail.com</a></p>
+    </div>
+
+    <div class="auth-panel" id="authSignedIn">
+      <div class="profile-large" id="profileAvatarLarge">S</div>
+      <h2 class="modal-title" id="profileTitle">Your Profile</h2>
+      <p class="modal-desc" id="profileEmail">Signed in</p>
+      <div class="profile-actions">
+        <input type="file" id="avatarFile" accept="image/*" style="display:none">
+        <button class="btn-o" id="avatarBtn" type="button">Change Picture</button>
+      </div>
+      <form class="auth-form" id="profileForm">
+        <label class="field-label" for="profileName">Name</label>
+        <input class="text-field" id="profileName" type="text" autocomplete="name" placeholder="Your name">
+        <button class="btn-p" id="profileSave" type="submit">Save Profile</button>
+      </form>
+      <button class="btn-o danger" id="logoutBtn" type="button">Log Out</button>
+      <p class="auth-status" id="profileStatus"></p>
     </div>
   </div>
 </div>

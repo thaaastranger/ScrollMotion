@@ -13,6 +13,32 @@
 html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--t1); }
 body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
 
+.auth-top {
+  position: fixed; top: 14px; right: 14px; z-index: 90;
+  display: flex; align-items: center; gap: 10px;
+}
+.support-link {
+  font-size: 11px; color: var(--t3); text-decoration: none;
+  transition: color .15s;
+}
+.support-link:hover { color: var(--t1); }
+.auth-chip, .profile-chip {
+  min-height: 30px; display: flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 5px 10px; border-radius: 6px;
+  border: 1px solid var(--b1); background: rgba(255,255,255,.04);
+  color: var(--t2); font-family: inherit; font-size: 11px; cursor: pointer;
+  transition: all .15s;
+}
+.auth-chip:hover, .profile-chip:hover { background: rgba(255,255,255,.08); color: var(--t1); }
+.profile-chip { max-width: 180px; }
+.profile-avatar {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: grid; place-items: center; overflow: hidden;
+  background: #fff; color: #0a0a0b; font-size: 10px; font-weight: 600;
+  flex-shrink: 0;
+}
+.profile-avatar img, .profile-large img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
 /* ────── Upload ────── */
 .upload {
   width: 100%; height: 100%;
@@ -64,6 +90,8 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-
   border-bottom: 1px solid var(--b1);
 }
 .top-l { display: flex; align-items: center; gap: 8px; }
+.top-actions { display: flex; align-items: center; gap: 9px; }
+.ws.on ~ .auth-top { display: none; }
 .top-logo { width: 22px; height: 22px; border-radius: 5px; background: linear-gradient(135deg,#1e1e20,#111); border: 1px solid var(--b1); display: grid; place-items: center; }
 .top-logo svg { width: 10px; height: 10px; opacity: .4; }
 .top-name { font-size: 12px; font-weight: 600; letter-spacing: -.1px; }
@@ -246,7 +274,58 @@ input[type="range"] { width: 100%; accent-color: #fff; height: 2px; cursor: poin
   content: '✓'; color: rgba(255,255,255,.35); font-weight: 600; flex-shrink: 0;
 }
 
+.auth-box { width: min(92%, 460px); }
+.auth-panel { display: none; }
+.auth-panel.on { display: block; }
+.auth-mark {
+  width: 46px; height: 46px; border-radius: 14px; margin: 0 auto 16px;
+  display: grid; place-items: center; color: rgba(255,255,255,.72);
+  background: linear-gradient(145deg, #1a1a1c 0%, #111 100%);
+  border: 1px solid var(--b1);
+}
+.auth-tabs {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  margin-bottom: 18px;
+}
+.auth-tab {
+  padding: 9px 12px; border-radius: 6px; border: 1px solid var(--b1);
+  background: rgba(255,255,255,.04); color: var(--t3);
+  cursor: pointer; font: inherit; font-size: 11px; letter-spacing: 1px;
+  text-transform: uppercase; transition: all .15s;
+}
+.auth-tab.on { background: #fff; border-color: #fff; color: #0a0a0b; }
+.auth-form { text-align: left; }
+.field-label {
+  display: block; margin: 12px 0 6px;
+  font-size: 10px; color: var(--t3); letter-spacing: 1px; text-transform: uppercase;
+}
+.text-field {
+  width: 100%; padding: 11px 12px; border-radius: 7px;
+  border: 1px solid var(--b1); background: rgba(255,255,255,.04);
+  color: var(--t1); font: inherit; font-size: 13px; outline: none;
+  transition: border-color .15s, background .15s;
+}
+.text-field:focus { border-color: rgba(255,255,255,.22); background: rgba(255,255,255,.06); }
+.auth-form .btn-p { margin-top: 16px; }
+.auth-status {
+  min-height: 18px; margin-top: 12px;
+  font-size: 12px; color: var(--t3); line-height: 1.45;
+}
+.auth-status.ok { color: rgba(190,255,210,.72); }
+.auth-status.err { color: rgba(255,150,150,.85); }
+.auth-foot { margin-top: 18px; font-size: 11px; color: var(--t4); }
+.auth-foot a { color: var(--t2); text-decoration: none; }
+.profile-large {
+  width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 16px;
+  display: grid; place-items: center; overflow: hidden;
+  background: #fff; color: #0a0a0b; font-size: 24px; font-weight: 600;
+}
+.profile-actions { margin-bottom: 6px; }
+.danger { margin-top: 6px; color: rgba(255,170,170,.8); }
+
 @media (max-width: 700px) {
   .sb { width: 220px; }
   .modal-box { padding: 28px 24px; }
+  .top-actions .support-link { display: none; }
+  .profile-chip { max-width: 120px; }
 }

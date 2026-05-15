@@ -5,6 +5,29 @@
   let imageFrames = []; // Base64 data URLs for image sequences
   let jpegQuality = 0.8, exportFormat = 'jpeg';
   let exportResolution = 'original', exportAspect = 'original';
+  let authMode = 'login';
+  let supabaseClient = null;
+  let currentUser = null;
+  let currentProfile = null;
+
+  const supabaseConfig = window.SCROLLMOTION_SUPABASE || {};
+  const hasSupabaseConfig = Boolean(
+    supabaseConfig.url &&
+    supabaseConfig.anonKey &&
+    supabaseConfig.url.startsWith('http') &&
+    supabaseConfig.anonKey.length > 20 &&
+    window.supabase
+  );
+
+  if (hasSupabaseConfig) {
+    supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.anonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    });
+  }
 
   // ── User Tier & Limits ──
   let userTier = 'free'; // 'free', 'pro', 'business'
@@ -72,6 +95,316 @@
   const btnUpgrade = $('btnUpgrade');
   const btnDemoTier = $('btnDemoTier');
   const tierBadge = $('tierBadge');
+  const authTop = document.querySelector('.auth-top');
+  const authOpen = $('authOpen');
+  const accountBtn = $('accountBtn');
+  const accountName = $('accountName');
+  const topAvatar = $('topAvatar');
+  const authModal = $('authModal');
+  const authClose = $('authClose');
+  const authSignedOut = $('authSignedOut');
+  const authSignedIn = $('authSignedIn');
+  const authTitle = $('authTitle');
+  const authDesc = $('authDesc');
+  const authForm = $('authForm');
+  const authEmail = $('authEmail');
+  const authName = $('authName');
+  const nameFieldWrap = $('nameFieldWrap');
+  const authSubmit = $('authSubmit');
+  const authStatus = $('authStatus');
+  const profileTitle = $('profileTitle');
+  const profileEmail = $('profileEmail');
+  const profileAvatarLarge = $('profileAvatarLarge');
+  const avatarFile = $('avatarFile');
+  const avatarBtn = $('avatarBtn');
+  const profileForm = $('profileForm');
+  const profileName = $('profileName');
+  const profileSave = $('profileSave');
+  const profileStatus = $('profileStatus');
+  const logoutBtn = $('logoutBtn');
+
+  // ── Auth & Profile ──
+  const supportEmail = 'sobhanrabbani86@gmail.com';
+
+  function setStatus(el, message, type = '') {
+    if (!el) return;
+    el.textContent = message || '';
+    el.className = 'auth-status' + (type ? ' ' + type : '');
+  }
+
+  function getDisplayName() {
+    return currentProfile?.full_name || currentUser?.user_metadata?.full_name || currentUser?.email || 'Account';
+  }
+
+  function getInitials(name) {
+    const clean = (name || 'S').trim();
+    const parts = clean.split(/\s+/).filter(Boolean);
+    return (parts.length > 1 ? parts[0][0] + parts[1][0] : clean[0]).toUpperCase();
+  }
+
+  function renderAvatar(el, url, name) {
+    if (!el) return;
+    if (url) {
+      el.innerHTML = `<img src="${url}" alt="">`;
+    } else {
+      el.textContent = getInitials(name);
+    }
+  }
+
+  function setAuthMode(nextMode) {
+    authMode = nextMode;
+    document.querySelectorAll('.auth-tab').forEach(tab => {
+      tab.classList.toggle('on', tab.dataset.authMode === authMode);
+    });
+    const isRegister = authMode === 'register';
+    authTitle.textContent = isRegister ? 'Create Account' : 'Login';
+    authDesc.textContent = isRegister
+      ? 'Create your profile with email only. A magic link will finish registration.'
+      : 'Enter your email and we will send a secure magic link.';
+    nameFieldWrap.style.display = isRegister ? 'block' : 'none';
+    authSubmit.textContent = isRegister ? 'Send Registration Link' : 'Send Magic Link';
+    setStatus(authStatus, '');
+  }
+
+  function openAuthModal(modeOverride) {
+    if (modeOverride) setAuthMode(modeOverride);
+    renderAuthState();
+    authModal.classList.add('on');
+  }
+
+  function closeAuthModal() {
+    authModal.classList.remove('on');
+  }
+
+  function setAuthTopVisibility() {
+    if (!authTop) return;
+    authTop.style.display = W.classList.contains('on') ? 'none' : 'flex';
+  }
+
+  function renderAuthState() {
+    const signedIn = Boolean(currentUser);
+    authSignedOut.classList.toggle('on', !signedIn);
+    authSignedIn.classList.toggle('on', signedIn);
+
+    if (!signedIn) {
+      authOpen.textContent = 'Login';
+      accountName.textContent = 'Login';
+      renderAvatar(topAvatar, '', 'S');
+      if (!hasSupabaseConfig) {
+        setStatus(authStatus, 'Supabase is not configured yet. Add your project URL and anon key in auth-config.js.', 'err');
+      }
+      return;
+    }
+
+    const name = getDisplayName();
+    const avatarUrl = currentProfile?.avatar_url || currentUser?.user_metadata?.avatar_url || '';
+    authOpen.textContent = name;
+    accountName.textContent = name;
+    profileTitle.textContent = name;
+    profileEmail.textContent = currentUser.email || 'Signed in';
+    profileName.value = currentProfile?.full_name || currentUser?.user_metadata?.full_name || '';
+    renderAvatar(topAvatar, avatarUrl, name);
+    renderAvatar(profileAvatarLarge, avatarUrl, name);
+  }
+
+  function getRedirectUrl() {
+    return window.location.origin + window.location.pathname;
+  }
+
+  async function fetchProfile() {
+    if (!supabaseClient || !currentUser) return null;
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .select('id,email,full_name,avatar_url,tier,exports_used,created_at,updated_at')
+      .eq('id', currentUser.id)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (data) return data;
+
+    const fallbackName = currentUser.user_metadata?.full_name || '';
+    const { data: inserted, error: insertError } = await supabaseClient
+      .from('profiles')
+      .upsert({
+        id: currentUser.id,
+        email: currentUser.email,
+        full_name: fallbackName,
+        tier: userTier,
+        exports_used: exportsUsed
+      })
+      .select('id,email,full_name,avatar_url,tier,exports_used,created_at,updated_at')
+      .single();
+
+    if (insertError) throw insertError;
+    return inserted;
+  }
+
+  async function refreshProfile() {
+    if (!currentUser) {
+      currentProfile = null;
+      renderAuthState();
+      return;
+    }
+
+    try {
+      currentProfile = await fetchProfile();
+      if (currentProfile?.tier && TIER_LIMITS[currentProfile.tier]) {
+        userTier = currentProfile.tier;
+      }
+      if (Number.isFinite(currentProfile?.exports_used)) {
+        exportsUsed = currentProfile.exports_used;
+      }
+      applyTierLimits();
+      updateTierBadge();
+      renderAuthState();
+    } catch (err) {
+      console.error(err);
+      renderAuthState();
+      setStatus(profileStatus, 'Profile could not be loaded. Check the Supabase schema and policies.', 'err');
+    }
+  }
+
+  async function handleAuthChange(session) {
+    currentUser = session?.user || null;
+    await refreshProfile();
+  }
+
+  async function initializeAuth() {
+    setAuthMode('login');
+    setAuthTopVisibility();
+
+    if (!hasSupabaseConfig) {
+      renderAuthState();
+      return;
+    }
+
+    const { data, error } = await supabaseClient.auth.getSession();
+    if (error) {
+      setStatus(authStatus, error.message, 'err');
+    }
+    await handleAuthChange(data?.session || null);
+
+    supabaseClient.auth.onAuthStateChange((_event, session) => {
+      handleAuthChange(session);
+    });
+  }
+
+  document.querySelectorAll('.auth-tab').forEach(tab => {
+    tab.onclick = () => setAuthMode(tab.dataset.authMode);
+  });
+
+  authOpen.onclick = () => openAuthModal('login');
+  accountBtn.onclick = () => openAuthModal(currentUser ? null : 'login');
+  authClose.onclick = closeAuthModal;
+  authModal.querySelector('.modal-bg').onclick = closeAuthModal;
+
+  authForm.onsubmit = async e => {
+    e.preventDefault();
+    if (!hasSupabaseConfig) {
+      setStatus(authStatus, 'Supabase is not configured yet. Add your project URL and anon key in auth-config.js.', 'err');
+      return;
+    }
+
+    const email = authEmail.value.trim();
+    const fullName = authName.value.trim();
+    if (!email) return;
+
+    authSubmit.disabled = true;
+    setStatus(authStatus, 'Sending magic link...');
+
+    const { error } = await supabaseClient.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: authMode === 'register',
+        emailRedirectTo: getRedirectUrl(),
+        data: { full_name: fullName }
+      }
+    });
+
+    authSubmit.disabled = false;
+    if (error) {
+      setStatus(authStatus, error.message, 'err');
+      return;
+    }
+
+    const verb = authMode === 'register' ? 'registration' : 'login';
+    setStatus(authStatus, `Check your email for the ${verb} magic link.`, 'ok');
+  };
+
+  profileForm.onsubmit = async e => {
+    e.preventDefault();
+    if (!supabaseClient || !currentUser) return;
+    const fullName = profileName.value.trim();
+    profileSave.disabled = true;
+    setStatus(profileStatus, 'Saving profile...');
+
+    const { error } = await supabaseClient
+      .from('profiles')
+      .upsert({
+        id: currentUser.id,
+        email: currentUser.email,
+        full_name: fullName,
+        avatar_url: currentProfile?.avatar_url || null
+      });
+
+    if (!error) {
+      await supabaseClient.auth.updateUser({ data: { full_name: fullName } });
+      await refreshProfile();
+      setStatus(profileStatus, 'Profile saved.', 'ok');
+    } else {
+      setStatus(profileStatus, error.message, 'err');
+    }
+
+    profileSave.disabled = false;
+  };
+
+  avatarBtn.onclick = () => avatarFile.click();
+  avatarFile.onchange = async e => {
+    const file = e.target.files[0];
+    if (!file || !supabaseClient || !currentUser) return;
+
+    setStatus(profileStatus, 'Uploading picture...');
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const path = `${currentUser.id}/avatar-${Date.now()}.${ext}`;
+    const { error: uploadError } = await supabaseClient.storage
+      .from('avatars')
+      .upload(path, file, { upsert: true, cacheControl: '3600' });
+
+    if (uploadError) {
+      setStatus(profileStatus, uploadError.message, 'err');
+      return;
+    }
+
+    const { data: publicData } = supabaseClient.storage.from('avatars').getPublicUrl(path);
+    const avatarUrl = publicData.publicUrl;
+    const { error: profileError } = await supabaseClient
+      .from('profiles')
+      .upsert({
+        id: currentUser.id,
+        email: currentUser.email,
+        full_name: profileName.value.trim(),
+        avatar_url: avatarUrl
+      });
+
+    if (profileError) {
+      setStatus(profileStatus, profileError.message, 'err');
+      return;
+    }
+
+    await supabaseClient.auth.updateUser({ data: { avatar_url: avatarUrl } });
+    await refreshProfile();
+    setStatus(profileStatus, 'Picture updated.', 'ok');
+    avatarFile.value = '';
+  };
+
+  logoutBtn.onclick = async () => {
+    if (!supabaseClient) return;
+    await supabaseClient.auth.signOut();
+    currentUser = null;
+    currentProfile = null;
+    closeAuthModal();
+    renderAuthState();
+  };
 
   // ── Tier Management ──
   function applyTierLimits() {
@@ -125,6 +458,7 @@
     modalDesc.textContent = messages[reason] || messages.limit;
     upgradeModal.classList.add('on');
   }
+  window.showUpgradeModal = showUpgradeModal;
 
   function hideUpgradeModal() {
     upgradeModal.classList.remove('on');
@@ -144,6 +478,35 @@
   function incrementExportCount() {
     exportsUsed++;
     localStorage.setItem('scrollmotion_exports', exportsUsed.toString());
+    if (supabaseClient && currentUser) {
+      supabaseClient
+        .from('profiles')
+        .update({ exports_used: exportsUsed })
+        .eq('id', currentUser.id)
+        .then(({ error }) => {
+          if (error) console.error(error);
+        });
+    }
+  }
+
+  function logExport(exportMode) {
+    if (!supabaseClient || !currentUser) return;
+    const exportType = exportMode === 'element' ? 'html_element' : 'html_page';
+    supabaseClient
+      .from('exports')
+      .insert({
+        user_id: currentUser.id,
+        export_type: exportType,
+        source_type: mode,
+        frame_count: fc,
+        scroll_pixels: fc * ppf,
+        format: exportFormat,
+        resolution: exportResolution,
+        aspect_ratio: exportAspect
+      })
+      .then(({ error }) => {
+        if (error) console.error(error);
+      });
   }
 
   function switchTier(newTier) {
@@ -180,6 +543,7 @@
   // Apply initial limits and update UI
   applyTierLimits();
   updateTierBadge();
+  initializeAuth();
 
   // ── Mode Toggle ──
   uplTabs.forEach(tab => {
@@ -238,6 +602,7 @@
     ready = false;
     U.classList.add('gone');
     W.classList.add('on');
+    setAuthTopVisibility();
     fname.textContent = file.name;
     ovLoad.classList.add('on');
     ovLoadT.textContent = 'Loading video…';
@@ -295,6 +660,7 @@
     ready = false;
     U.classList.add('gone');
     W.classList.add('on');
+    setAuthTopVisibility();
 
     // Filter only images, sort by filename
     const imgFiles = files.filter(f => f.type.startsWith('image/')).sort((a, b) =>
@@ -555,6 +921,7 @@
   $('bnew').onclick = () => {
     vid.src = ''; ready = false;
     W.classList.remove('on'); U.classList.remove('gone');
+    setAuthTopVisibility();
     ovLoad.classList.remove('on'); badge.classList.remove('on'); scrub.classList.remove('on');
     bDl.disabled = true; bCp.disabled = true; bEl.disabled = true;
     fi.value = ''; fiImg.value = ''; fiZip.value = '';
@@ -668,6 +1035,7 @@
 
     // Increment export count for free tier
     incrementExportCount();
+    logExport(exportMode);
 
     ovExport.classList.remove('on');
     // Restore scroll position
