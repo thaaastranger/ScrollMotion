@@ -62,7 +62,9 @@ scrollmotion/
 ├── index.html          # Main app (upload & editor)
 ├── landing.html        # Marketing landing page
 ├── pricing.html        # Pricing page
-├── auth-config.js      # Public Supabase URL + anon key config
+├── api/config.js       # Vercel endpoint for public Supabase config
+├── auth-config.js      # Local-only public Supabase config fallback
+├── vercel.json         # Security headers and Vercel routing config
 ├── supabase/           # SQL schema and magic-link email template
 ├── app.js             # Core application logic + tier limits
 ├── styles.css         # All styles

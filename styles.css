@@ -197,6 +197,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-
 .sg-v small { font-size: 9px; color: var(--t3); margin-left: 1px; }
 input[type="range"] { width: 100%; accent-color: #fff; height: 2px; cursor: pointer; }
 .sg-hint { font-size: 10px; color: var(--t4); margin-top: 3px; line-height: 1.4; }
+.sg-hint a { color: rgba(255,255,255,.6); text-decoration: underline; }
 
 .sel-format {
   width: 100%; padding: 8px 12px; font-size: 12px;

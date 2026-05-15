@@ -9,25 +9,8 @@
   let supabaseClient = null;
   let currentUser = null;
   let currentProfile = null;
-
-  const supabaseConfig = window.SCROLLMOTION_SUPABASE || {};
-  const hasSupabaseConfig = Boolean(
-    supabaseConfig.url &&
-    supabaseConfig.anonKey &&
-    supabaseConfig.url.startsWith('http') &&
-    supabaseConfig.anonKey.length > 20 &&
-    window.supabase
-  );
-
-  if (hasSupabaseConfig) {
-    supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.anonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true
-      }
-    });
-  }
+  let hasSupabaseConfig = false;
+  let authConfigLoaded = false;
 
   // ── User Tier & Limits ──
   let userTier = 'free'; // 'free', 'pro', 'business'
@@ -125,6 +108,48 @@
 
   // ── Auth & Profile ──
   const supportEmail = 'sobhanrabbani86@gmail.com';
+  const maxAvatarSize = 5 * 1024 * 1024;
+
+  async function loadSupabaseConfig() {
+    if (authConfigLoaded) return;
+    authConfigLoaded = true;
+
+    let config = window.SCROLLMOTION_SUPABASE || {};
+
+    try {
+      const res = await fetch('/api/config', {
+        cache: 'no-store',
+        headers: { accept: 'application/json' }
+      });
+      if (res.ok) {
+        const apiConfig = await res.json();
+        config = {
+          url: apiConfig.supabaseUrl || config.url,
+          anonKey: apiConfig.supabaseAnonKey || config.anonKey
+        };
+      }
+    } catch (err) {
+      // Local file usage falls back to auth-config.js.
+    }
+
+    hasSupabaseConfig = Boolean(
+      config.url &&
+      config.anonKey &&
+      config.url.startsWith('https://') &&
+      config.anonKey.length > 20 &&
+      window.supabase
+    );
+
+    if (hasSupabaseConfig) {
+      supabaseClient = window.supabase.createClient(config.url, config.anonKey, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true
+        }
+      });
+    }
+  }
 
   function setStatus(el, message, type = '') {
     if (!el) return;
@@ -191,7 +216,7 @@
       accountName.textContent = 'Login';
       renderAvatar(topAvatar, '', 'S');
       if (!hasSupabaseConfig) {
-        setStatus(authStatus, 'Supabase is not configured yet. Add your project URL and anon key in auth-config.js.', 'err');
+        setStatus(authStatus, 'Supabase is not configured yet. Add SUPABASE_URL and SUPABASE_ANON_KEY in Vercel Environment Variables.', 'err');
       }
       return;
     }
@@ -228,9 +253,7 @@
       .upsert({
         id: currentUser.id,
         email: currentUser.email,
-        full_name: fallbackName,
-        tier: userTier,
-        exports_used: exportsUsed
+        full_name: fallbackName
       })
       .select('id,email,full_name,avatar_url,tier,exports_used,created_at,updated_at')
       .single();
@@ -272,6 +295,7 @@
   async function initializeAuth() {
     setAuthMode('login');
     setAuthTopVisibility();
+    await loadSupabaseConfig();
 
     if (!hasSupabaseConfig) {
       renderAuthState();
@@ -301,7 +325,7 @@
   authForm.onsubmit = async e => {
     e.preventDefault();
     if (!hasSupabaseConfig) {
-      setStatus(authStatus, 'Supabase is not configured yet. Add your project URL and anon key in auth-config.js.', 'err');
+      setStatus(authStatus, 'Supabase is not configured yet. Add SUPABASE_URL and SUPABASE_ANON_KEY in Vercel Environment Variables.', 'err');
       return;
     }
 
@@ -340,12 +364,8 @@
 
     const { error } = await supabaseClient
       .from('profiles')
-      .upsert({
-        id: currentUser.id,
-        email: currentUser.email,
-        full_name: fullName,
-        avatar_url: currentProfile?.avatar_url || null
-      });
+      .update({ full_name: fullName })
+      .eq('id', currentUser.id);
 
     if (!error) {
       await supabaseClient.auth.updateUser({ data: { full_name: fullName } });
@@ -362,6 +382,16 @@
   avatarFile.onchange = async e => {
     const file = e.target.files[0];
     if (!file || !supabaseClient || !currentUser) return;
+    if (!file.type.startsWith('image/')) {
+      setStatus(profileStatus, 'Choose an image file for your profile picture.', 'err');
+      avatarFile.value = '';
+      return;
+    }
+    if (file.size > maxAvatarSize) {
+      setStatus(profileStatus, 'Profile pictures must be 5MB or smaller.', 'err');
+      avatarFile.value = '';
+      return;
+    }
 
     setStatus(profileStatus, 'Uploading picture...');
     const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -379,12 +409,11 @@
     const avatarUrl = publicData.publicUrl;
     const { error: profileError } = await supabaseClient
       .from('profiles')
-      .upsert({
-        id: currentUser.id,
-        email: currentUser.email,
+      .update({
         full_name: profileName.value.trim(),
         avatar_url: avatarUrl
-      });
+      })
+      .eq('id', currentUser.id);
 
     if (profileError) {
       setStatus(profileStatus, profileError.message, 'err');
@@ -443,7 +472,16 @@
     // Update frame limit hint
     if (userTier === 'free') {
       const hint = document.querySelector('#rFr + .sg-hint');
-      if (hint) hint.innerHTML = `More frames = smoother but heavier. Free tier limited to ${limits.maxFrames} frames. <a href="#" onclick="showUpgradeModal('frames'); return false;" style="color: rgba(255,255,255,.6); text-decoration: underline;">Upgrade</a>`;
+      if (hint) {
+        hint.innerHTML = `More frames = smoother but heavier. Free tier limited to ${limits.maxFrames} frames. <a href="#" id="upgradeFramesLink">Upgrade</a>`;
+        const upgradeFramesLink = $('upgradeFramesLink');
+        if (upgradeFramesLink) {
+          upgradeFramesLink.onclick = e => {
+            e.preventDefault();
+            showUpgradeModal('frames');
+          };
+        }
+      }
     }
   }
 
@@ -478,34 +516,28 @@
   function incrementExportCount() {
     exportsUsed++;
     localStorage.setItem('scrollmotion_exports', exportsUsed.toString());
-    if (supabaseClient && currentUser) {
-      supabaseClient
-        .from('profiles')
-        .update({ exports_used: exportsUsed })
-        .eq('id', currentUser.id)
-        .then(({ error }) => {
-          if (error) console.error(error);
-        });
-    }
   }
 
   function logExport(exportMode) {
     if (!supabaseClient || !currentUser) return;
     const exportType = exportMode === 'element' ? 'html_element' : 'html_page';
     supabaseClient
-      .from('exports')
-      .insert({
-        user_id: currentUser.id,
-        export_type: exportType,
-        source_type: mode,
-        frame_count: fc,
-        scroll_pixels: fc * ppf,
-        format: exportFormat,
-        resolution: exportResolution,
-        aspect_ratio: exportAspect
+      .rpc('record_export', {
+        p_export_type: exportType,
+        p_source_type: mode,
+        p_frame_count: fc,
+        p_scroll_pixels: fc * ppf,
+        p_format: exportFormat,
+        p_resolution: exportResolution,
+        p_aspect_ratio: exportAspect
       })
-      .then(({ error }) => {
+      .then(async ({ data, error }) => {
         if (error) console.error(error);
+        if (data && Number.isFinite(data.exports_used)) {
+          exportsUsed = data.exports_used;
+          localStorage.setItem('scrollmotion_exports', exportsUsed.toString());
+          await refreshProfile();
+        }
       });
   }
 

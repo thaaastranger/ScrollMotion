@@ -21,18 +21,18 @@ In Supabase Dashboard:
 - Site URL: your production URL, for example `https://scrollmotion-nine.vercel.app`
 - Redirect URLs: add the same production URL and your local file/dev URL while testing
 
-## 3. Configure the client
+## 3. Configure Vercel Environment Variables
 
-Edit `auth-config.js`:
+In Vercel Project Settings > Environment Variables, add:
 
-```js
-window.SCROLLMOTION_SUPABASE = {
-  url: 'https://YOUR_PROJECT.supabase.co',
-  anonKey: 'YOUR_PUBLIC_ANON_KEY'
-};
+```txt
+SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+SUPABASE_ANON_KEY=YOUR_PUBLIC_ANON_KEY
 ```
 
-The anon key is intended to be public. Do not put service-role keys in this file.
+The app reads these through `/api/config`. The anon key is intended to be public and is protected by Row Level Security policies. Do not add Supabase service-role keys to Vercel for this frontend app.
+
+For local file-only testing, you can temporarily fill `auth-config.js` with the same public URL and anon key. Do not commit private keys.
 
 ## 4. Add the black magic-link email
 
